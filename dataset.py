@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import os
 import glob
 import librosa, librosa.display, librosa.util
@@ -20,14 +21,26 @@ class Dataset(torch.utils.data.Dataset):
         pattern = os.path.join(path, "**", "*.wav")
         print(f"Loading data from \"{pattern}\"")
         self.data = sorted(glob.glob(pattern))
+
+        from sklearn.preprocessing import LabelEncoder
+        # gather sorted labels
+        self.labels_raw = sorted(list(set([os.path.dirname(audio).split(os.path.sep)[-1] for audio in self.data])))
+
+        # fit labels to encoding
+        self.label_encoder = LabelEncoder()
+        self.label_encoder.fit_transform(self.labels_raw)
+        
         if randomize:
             np.random.shuffle(self.data)
 
     def __getitem__(self, index):
         # get audio path
         audio = self.data[index]
-        # get label
+        # get audio label
         label = os.path.dirname(audio).split(os.path.sep)[-1]
+        label = self.label_encoder.transform([label])
+        label = torch.tensor(label[0], dtype=torch.int64)
+        label = F.one_hot(label, num_classes=len(self.label_encoder.classes_))
         # load audio, also get sample rate
         audio, sr = librosa.load(audio)
         # trim silence
