@@ -3,8 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SpectrogramModel(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, num_classes: int) -> None:
         super(SpectrogramModel, self).__init__()
+        self.num_classes = num_classes
 
         self.conv1 = nn.Conv1d(in_channels=80, out_channels=512, kernel_size=5)
         self.batch1 = nn.BatchNorm1d(num_features=512)
@@ -38,16 +39,18 @@ class SpectrogramModel(nn.Module):
 
         self.lstm3 = nn.LSTM(
             input_size=512,
-            hidden_size=1024,
+            hidden_size=3,
             num_layers=3,
             bidirectional=True,
             batch_first=True
         )
 
         self.dense = nn.Linear(
-            in_features=2048,
-            out_features=80
+            in_features=702,
+            out_features=num_classes
         )
+
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, mel_spectro):
         x = mel_spectro
@@ -56,11 +59,6 @@ class SpectrogramModel(nn.Module):
         x = self.batch3(F.relu(self.conv3(x)))
         x = x.transpose(2,1)
         x, _ = self.lstm1(x) # ignore final hidden state
-        # downsampling, take every 32nd sample
-        reduction_factor = 32 
-        x = x[:,::reduction_factor,:]
-        # # upsampling, repeat every sample 32 times
-        # x = x.repeat(1,1,reduction_factor).reshape(x.size(0),-1,x.size(2))
         x, _ = self.lstm2(x)
         x = x.transpose(2,1)
         x = self.batch1(F.relu(self.conv4(x)))
@@ -68,8 +66,9 @@ class SpectrogramModel(nn.Module):
         x = self.batch3(F.relu(self.conv6(x)))
         x = x.transpose(2,1)
         x, _ = self.lstm3(x)
+        x = torch.flatten(x, start_dim=1)
         x = self.dense(x)
-        x = x.transpose(2,1)
+        x = self.softmax(x)
         return x
 
     def get_param_count(self):

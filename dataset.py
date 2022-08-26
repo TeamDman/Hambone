@@ -18,6 +18,7 @@ class Dataset(torch.utils.data.Dataset):
         self.hop_length=200
         self.n_mels=80
         self.clip_length=int(self.sample_rate*1.6)
+        self.cache = {}
         pattern = os.path.join(path, "**", "*.wav")
         print(f"Loading data from \"{pattern}\"")
         self.data = sorted(glob.glob(pattern))
@@ -34,6 +35,8 @@ class Dataset(torch.utils.data.Dataset):
             np.random.shuffle(self.data)
 
     def __getitem__(self, index):
+        if index in self.cache:
+            return self.cache[index]
         # get audio path
         audio = self.data[index]
         # get audio label
@@ -69,7 +72,9 @@ class Dataset(torch.utils.data.Dataset):
             clips.append(clip)
             spectros.append(spectro)
 
-        return label, torch.tensor(clips), torch.tensor(spectros)
+        # return label, torch.tensor(clips), torch.tensor(spectros)
+        self.cache[index] = (label, torch.tensor(spectros))
+        return label, torch.tensor(spectros)
 
     def __len__(self):
         return len(self.data)
@@ -112,29 +117,29 @@ class Dataset(torch.utils.data.Dataset):
             img = librosa.display.waveplot(v.detach().numpy(), sr=16000)
 
     def batched(self, batch_size):
-        clip_batch = []
+        label_batch = []
         spectro_batch = []
 
         # collect clips
-        for i, (clips,spectros) in enumerate(self):
+        for i, (label,spectros) in enumerate(self):
             # add to queue
-            clip_batch += clips
+            label_batch += [label] * spectros.shape[0]
             spectro_batch += spectros
             
             # batch ready to be sent out
-            batch_ready = len(clip_batch) >= batch_size
+            batch_ready = len(label_batch) >= batch_size
             if batch_ready or i == len(self) - 1:
                 # send out the batch
-                yield torch.stack(clip_batch[:batch_size]), torch.stack(spectro_batch[:batch_size])
+                yield torch.stack(label_batch[:batch_size]), torch.stack(spectro_batch[:batch_size])
                 # remove the sent batch
-                clip_batch = clip_batch[batch_size:]
+                label_batch = label_batch[batch_size:]
                 spectro_batch = spectro_batch[batch_size:]
         
         # all clips collected
         # finish sending out batches
-        while len(clip_batch) > 0:
+        while len(label_batch) > 0:
             # send out the batch
-            yield torch.stack(clip_batch[:batch_size]), torch.stack(spectro_batch[:batch_size])
+            yield torch.stack(label_batch[:batch_size]), torch.stack(spectro_batch[:batch_size])
             # remove the sent batch
-            clip_batch = clip_batch[batch_size:]
+            label_batch = label_batch[batch_size:]
             spectro_batch = spectro_batch[batch_size:]
