@@ -91,25 +91,27 @@ class Trainer:
 
         cpu = torch.device("cpu")
 
-        total_clips = 0
+        j = 0
+        entries_in_epoch = 0
         for epoch in range(epochs):
             for i, entry in enumerate(self.dataset.batched(batch_size)):
-                if epoch == 0: total_clips += batch_size
+                if epoch == 0: entries_in_epoch += 1
+                j += 1
                 self.checkpoint += 1
                 loss = self.train_step(entry)
                 loss = loss.detach().to(cpu).numpy()
                 if (i+1) % log_every_n == 0:
                     Trainer.show_loss(
                         epoch,
-                        f"{i}/{math.ceil(total_clips/batch_size)}",
+                        f"{i+1}/{entries_in_epoch}",
                         loss,
                     )
-                    time=epoch*total_clips + (i+1)*batch_size
-                    writer.add_scalar('loss', loss, time)
+                    writer.add_scalar('loss', loss, j)
                 if (i+1) % save_every_n == 0:
                     self.save()
         self.checkpoint+=1
         self.save()
+        writer.close()
     
     def save(self):
         try: # ignore pipe errors when ctrl+c used
