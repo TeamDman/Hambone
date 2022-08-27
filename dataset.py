@@ -73,7 +73,7 @@ class Dataset(torch.utils.data.Dataset):
             spectros.append(spectro)
 
         # return label, torch.tensor(clips), torch.tensor(spectros)
-        self.cache[index] = (label, torch.tensor(spectros))
+        self.cache[index] = (label, torch.tensor(np.array(spectros)))
         return label, torch.tensor(spectros)
 
     def __len__(self):

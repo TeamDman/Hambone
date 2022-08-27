@@ -62,6 +62,7 @@ class Trainer:
 
     def train_step(self, entry):
         y, spectros = entry
+        y = y.to(self.device)
         spectros = spectros.to(self.device)
         y_pred = self.model(spectros)
         
