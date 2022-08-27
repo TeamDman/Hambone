@@ -62,11 +62,11 @@ class Trainer:
 
     def train_step(self, entry):
         y, spectros = entry
-        y = y.to(self.device)
+        y = y.float().to(self.device)
         spectros = spectros.to(self.device)
         y_pred = self.model(spectros)
         
-        loss = self.loss_func(y_pred, y.float())
+        loss = self.loss_func(y_pred, y)
         
         self.model_optimizer.zero_grad()
         loss.backward()
