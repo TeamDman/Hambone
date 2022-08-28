@@ -102,7 +102,7 @@ class Trainer:
                 if (i+1) % log_every_n == 0:
                     Trainer.show_loss(
                         epoch,
-                        f"{i+1}/{entries_in_epoch}",
+                        f"{(i+1)%entries_in_epoch}/{entries_in_epoch}",
                         loss,
                     )
                 if (i+1) % save_every_n == 0:
