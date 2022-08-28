@@ -51,6 +51,7 @@ class Trainer:
 
         if checkpoint is None:
             checkpoint = 0
+
         self.model = model.to(device)
         self.dataset = dataset
         self.device = device
@@ -80,8 +81,7 @@ class Trainer:
         epochs=10,
         save_every_n=10,
         log_every_n=1,
-        batch_size=5,
-        run_name="runs/run1"
+        batch_size=5
     ):
         print(f"Beginning training {epochs} epochs, logging every {log_every_n}, saving every {save_every_n}, batch size {batch_size}.")
         
@@ -115,7 +115,7 @@ class Trainer:
             print(f"Saving checkpoint {self.checkpoint}")
         except BrokenPipeError:
             pass
-        Trainer.save_as(self.model, self.model_checkpoint_pattern.format(self.checkpoint), dir=self.checkpoint_dir)
+        self.save_as(self.model, self.model_checkpoint_pattern.format(self.checkpoint), dir=self.checkpoint_dir)
         try:
             print("Saved")
         except BrokenPipeError:
@@ -130,8 +130,7 @@ class Trainer:
             f"loss={loss:.5f}",
         )
 
-    @classmethod
-    def save_as(self, model, name, dir="checkpoints"):
+    def save_as(self, name, dir="checkpoints"):
         import pathlib
         import os.path
         save_dir = pathlib.Path(dir)
@@ -140,10 +139,9 @@ class Trainer:
         if os.path.exists(save_path):
             raise Exception("Won't overwrite existing models")
         else:
-            torch.save(model.state_dict(), save_path)
+            torch.save(self.model.state_dict(), save_path)
 
-    @classmethod
-    def load_from(self, model, name, dir="checkpoints"):
+    def load_from(self, name, dir="checkpoints"):
         import pathlib
         import os.path
         save_dir = pathlib.Path(dir)
@@ -151,4 +149,4 @@ class Trainer:
         if not os.path.exists(save_path):
             raise Exception(f"Can't find checkpoint file {save_path}")
         else:
-            model.load_state_dict(torch.load(save_path))
+            self.model.load_state_dict(torch.load(save_path, map_location=self.device))
