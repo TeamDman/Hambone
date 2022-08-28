@@ -85,34 +85,30 @@ class Trainer:
     ):
         print(f"Beginning training {epochs} epochs, logging every {log_every_n}, saving every {save_every_n}, batch size {batch_size}.")
         
-        import math
-
-        import torch.utils.tensorboard
-        writer = torch.utils.tensorboard.SummaryWriter(run_name)
+        # loss_hist = []
 
         cpu = torch.device("cpu")
 
-        j = 0
+        i = 0
         entries_in_epoch = 0
         for epoch in range(epochs):
-            for i, entry in enumerate(self.dataset.batched(batch_size)):
+            for entry in self.dataset.batched(batch_size):
                 if epoch == 0: entries_in_epoch += 1
-                j += 1
+                i += 1
                 self.checkpoint += 1
                 loss = self.train_step(entry)
                 loss = loss.detach().to(cpu).numpy()
+                # loss_hist.append(loss)
                 if (i+1) % log_every_n == 0:
                     Trainer.show_loss(
                         epoch,
                         f"{i+1}/{entries_in_epoch}",
                         loss,
                     )
-                    writer.add_scalar('loss', loss, j)
                 if (i+1) % save_every_n == 0:
                     self.save()
         self.checkpoint+=1
         self.save()
-        writer.close()
     
     def save(self):
         try: # ignore pipe errors when ctrl+c used
