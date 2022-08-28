@@ -10,7 +10,8 @@ class Dataset(torch.utils.data.Dataset):
     def __init__(
         self,
         path: str,
-        randomize: bool=True
+        randomize: bool=True,
+        orig_only: bool=False
     ) -> None:
         super().__init__()        
         self.sample_rate=16000
@@ -22,6 +23,8 @@ class Dataset(torch.utils.data.Dataset):
         pattern = os.path.join(path, "**", "*.wav")
         print(f"Loading data from \"{pattern}\"")
         self.data = sorted(glob.glob(pattern))
+        if orig_only:
+            self.data = [x for x in self.data if "orig" in x]
 
         from sklearn.preprocessing import LabelEncoder
         # gather sorted labels
