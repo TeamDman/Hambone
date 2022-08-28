@@ -124,14 +124,14 @@ class Dataset(torch.utils.data.Dataset):
         spectro_batch = []
 
         # collect clips
-        for i, (label,spectros) in enumerate(self):
+        for label,spectros in self:
             # add to queue
             label_batch += [label] * spectros.shape[0]
             spectro_batch += spectros
             
             # batch ready to be sent out
             batch_ready = len(label_batch) >= batch_size
-            if batch_ready or i == len(self) - 1:
+            if batch_ready:
                 # send out the batch
                 yield torch.stack(label_batch[:batch_size]), torch.stack(spectro_batch[:batch_size])
                 # remove the sent batch
