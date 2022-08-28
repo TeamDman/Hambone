@@ -53,7 +53,7 @@ class Dataset(torch.utils.data.Dataset):
         # pad audio to clip length
         full_clips = math.ceil(len(audio)/self.clip_length)
         full_length = full_clips * self.clip_length
-        audio = librosa.util.fix_length(audio, full_length)
+        audio = librosa.util.fix_length(audio, size=full_length)
 
         clips = []
         spectros = []
